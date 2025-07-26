@@ -2,6 +2,7 @@ package com.example.image.service.impl;
 
 
 import com.example.image.entity.ImageData;
+import com.example.image.exception.BadRequestException;
 import com.example.image.repository.ImageRepository;
 import com.example.image.service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.*;
+
 @Service
 public class ImageServiceImpl implements ImageService {
 
@@ -46,14 +48,14 @@ public class ImageServiceImpl implements ImageService {
     }
 
     @Override
-    public byte[] getImageById(String id) {
-        ImageData image = imageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Image not found with ID: " + id));
-        try {
-            Path path = Paths.get(image.getImagePath());
-            return Files.readAllBytes(path);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not read image: " + e.getMessage());
+    public ImageData getImageById(String id) {
+           Optional<ImageData> image = imageRepository.findById(id);
+        if(image.isPresent())
+        {
+            return image.get();
+        }
+        else{
+            throw new BadRequestException("Image not found");
         }
     }
 

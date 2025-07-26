@@ -123,11 +123,15 @@ public class ImageController {
     public ResponseEntity<CommonResponse> getImage(@PathVariable String id) {
         CommonResponse commonResponse = new CommonResponse();
         try {
-            byte[] imageBytes = imageService.getImageById(id);
+            ImageData _image = imageService.getImageById(id);
+            ImageResponse imageResponse=new ImageResponse();
+            imageResponse.setId(_image.getId());
+            imageResponse.setName(_image.getName());
+            imageResponse.setPath(_image.getImagePath());
             commonResponse.setStatus(ResponseStatus.SUCCESS);
             commonResponse.setMessage("Image fetched successfully");
             commonResponse.setStatusCode(200);
-            commonResponse.setData(imageBytes);
+            commonResponse.setData(imageResponse);
             return ResponseEntity.ok(commonResponse);
         } catch (Exception e) {
             commonResponse.setStatus(ResponseStatus.NOT_FOUND);

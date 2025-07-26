@@ -8,7 +8,7 @@ import java.util.*;
 
 public interface ImageService {
     ImageData saveImage(String name, MultipartFile file);
-    byte[] getImageById(String id);
+    ImageData getImageById(String id);
     List<ImageData> getAllImages();
 }
 
