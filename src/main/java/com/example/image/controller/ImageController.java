@@ -3,13 +3,15 @@ package com.example.image.controller;
 import com.example.image.entity.ImageData;
 import com.example.image.enumeration.ResponseStatus;
 import com.example.image.response.CommonResponse;
+import com.example.image.response.ImageResponse;
 import com.example.image.service.ImageService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/images")
@@ -18,86 +20,140 @@ public class ImageController {
     @Autowired
     private ImageService imageService;
 
-    @GetMapping
-    public String home() {
-        return "home";
-    }
-
-    // Single Image Upload
     @PostMapping("/upload")
     public ResponseEntity<CommonResponse> uploadImage(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) MultipartFile imageFile) {
 
+        CommonResponse commonResponse = new CommonResponse();
+
         if (name == null || name.trim().isEmpty()) {
-            CommonResponse error = new CommonResponse();
-            error.setMessage("Name must not be empty");
-            error.setStatus(ResponseStatus.ERROR);
-            error.setData(null);
-            error.setStatusCode(400);
-            return ResponseEntity.badRequest().body(error);
+            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("Name must not be empty");
+            commonResponse.setStatusCode(400);
+            commonResponse.setData(null);
+            return ResponseEntity.badRequest().body(commonResponse);
         }
 
         if (imageFile == null || imageFile.isEmpty()) {
-            CommonResponse error = new CommonResponse();
-            error.setMessage("Image file must not be empty");
-            error.setStatus(ResponseStatus.ERROR);
-            error.setData(null);
-            error.setStatusCode(400);
-            return ResponseEntity.badRequest().body(error);
+            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("Image file must not be empty");
+            commonResponse.setStatusCode(400);
+            commonResponse.setData(null);
+            return ResponseEntity.badRequest().body(commonResponse);
         }
 
-        ImageData result = imageService.saveImage(name, imageFile);
-        CommonResponse success = new CommonResponse();
-        success.setMessage("Image uploaded successfully");
-        success.setStatus(ResponseStatus.SUCCESS);
-        success.setData(result);
-        success.setStatusCode(200);
-        return ResponseEntity.ok(success);
+        try {
+            ImageData imageData = imageService.saveImage(name, imageFile);
+            ImageResponse imageResponse = new ImageResponse(
+                    imageData.getId(),
+                    imageData.getName(),
+                    imageData.getImagePath()
+            );
+
+            commonResponse.setSatus(ResponseStatus.SUCCESS);
+            commonResponse.setMessage("Image uploaded successfully");
+            commonResponse.setStatusCode(200);
+            commonResponse.setData(imageResponse);
+            return ResponseEntity.ok(commonResponse);
+        } catch (Exception e) {
+            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("Failed to upload image: " + e.getMessage());
+            commonResponse.setStatusCode(500);
+            commonResponse.setData(null);
+            return ResponseEntity.status(500).body(commonResponse);
+        }
     }
 
-    // ✅ New: Multiple Image Upload
     @PostMapping("/upload/multiple")
     public ResponseEntity<CommonResponse> uploadMultipleImages(
-            @RequestParam String name,
-            @RequestParam MultipartFile[] files) {
+            @RequestParam(required = false) String name,
+            @RequestParam("imageFiles") List<MultipartFile> imageFiles) {
 
-        if (files == null || files.length == 0) {
-            CommonResponse error = new CommonResponse();
-            error.setMessage("No files provided");
-            error.setStatus(ResponseStatus.ERROR);
-            error.setData(null);
-            error.setStatusCode(400);
-            return ResponseEntity.badRequest().body(error);
+        CommonResponse commonResponse = new CommonResponse();
+
+        if (name == null || name.trim().isEmpty()) {
+            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("Name must not be empty");
+            commonResponse.setStatusCode(400);
+            commonResponse.setData(null);
+            return ResponseEntity.badRequest().body(commonResponse);
         }
 
-        List<ImageData> savedImages = new ArrayList<>();
-        for (MultipartFile file : files) {
-            if (!file.isEmpty()) {
-                ImageData imageData = imageService.saveImage(name, file);
-                savedImages.add(imageData);
-            }
+        if (imageFiles == null || imageFiles.isEmpty()) {
+            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("At least one image file must be provided");
+            commonResponse.setStatusCode(400);
+            commonResponse.setData(null);
+            return ResponseEntity.badRequest().body(commonResponse);
         }
 
-        CommonResponse success = new CommonResponse();
-        success.setMessage("All images uploaded successfully");
-        success.setStatus(ResponseStatus.SUCCESS);
-        success.setData(savedImages);
-        success.setStatusCode(200);
-        return ResponseEntity.ok(success);
+        try {
+            List<ImageResponse> responses = imageFiles.stream()
+                    .filter(file -> !file.isEmpty())
+                    .map(file -> {
+                        try {
+                            ImageData saved = imageService.saveImage(name, file);
+                            return new ImageResponse(
+                                    saved.getId(),
+                                    saved.getName(),
+                                    saved.getImagePath()
+                            );
+                        } catch (Exception e) {
+                            throw new RuntimeException("Error saving image: " + file.getOriginalFilename(), e);
+                        }
+                    })
+                    .toList();
+
+            commonResponse.setSatus(ResponseStatus.SUCCESS);
+            commonResponse.setMessage("Images uploaded successfully");
+            commonResponse.setStatusCode(200);
+            commonResponse.setData(responses);
+            return ResponseEntity.ok(commonResponse);
+        } catch (Exception e) {
+            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("Failed to upload images: " + e.getMessage());
+            commonResponse.setStatusCode(500);
+            commonResponse.setData(null);
+            return ResponseEntity.status(500).body(commonResponse);
+        }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<byte[]> getImage(@PathVariable String id) {
-        byte[] imageBytes = imageService.getImageById(id);
-        return ResponseEntity.ok()
-                .header("Content-Type", "image/jpeg")
-                .body(imageBytes);
+    public ResponseEntity<CommonResponse> getImage(@PathVariable String id) {
+        CommonResponse commonResponse = new CommonResponse();
+        try {
+            byte[] imageBytes = imageService.getImageById(id);
+            commonResponse.setSatus(ResponseStatus.SUCCESS);
+            commonResponse.setMessage("Image fetched successfully");
+            commonResponse.setStatusCode(200);
+            commonResponse.setData(imageBytes);
+            return ResponseEntity.ok(commonResponse);
+        } catch (Exception e) {
+            commonResponse.setSatus(ResponseStatus.NOT_FOUND);
+            commonResponse.setMessage("Image not found with ID: " + e.getMessage());
+            commonResponse.setStatusCode(404);
+            commonResponse.setData(null);
+            return ResponseEntity.status(404).body(commonResponse);
+        }
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<ImageData>> getAllImages() {
-        List<ImageData> images = imageService.getAllImages();
-        return ResponseEntity.ok(images);
+    public ResponseEntity<CommonResponse> getAllImages() {
+        CommonResponse commonResponse = new CommonResponse();
+        try {
+            List<ImageData> images = imageService.getAllImages();
+            commonResponse.setSatus(ResponseStatus.SUCCESS);
+            commonResponse.setMessage("Fetched all images successfully");
+            commonResponse.setStatusCode(200);
+            commonResponse.setData(images);
+            return ResponseEntity.ok(commonResponse);
+        } catch (Exception e) {
+            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("Failed to fetch images: " + e.getMessage());
+            commonResponse.setStatusCode(500);
+            commonResponse.setData(null);
+            return ResponseEntity.status(500).body(commonResponse);
+        }
     }
 }
