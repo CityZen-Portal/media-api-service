@@ -1,4 +1,3 @@
-
 package com.example.image.controller;
 
 import com.example.image.entity.ImageData;
@@ -29,7 +28,7 @@ public class ImageController {
         CommonResponse commonResponse = new CommonResponse();
 
         if (name == null || name.trim().isEmpty()) {
-            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setStatus(ResponseStatus.ERROR);
             commonResponse.setMessage("Name must not be empty");
             commonResponse.setStatusCode(400);
             commonResponse.setData(null);
@@ -37,7 +36,7 @@ public class ImageController {
         }
 
         if (imageFile == null || imageFile.isEmpty()) {
-            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setStatus(ResponseStatus.ERROR);
             commonResponse.setMessage("Image file must not be empty");
             commonResponse.setStatusCode(400);
             commonResponse.setData(null);
@@ -52,13 +51,13 @@ public class ImageController {
                     imageData.getImagePath()
             );
 
-            commonResponse.setSatus(ResponseStatus.SUCCESS);
+            commonResponse.setStatus(ResponseStatus.SUCCESS);
             commonResponse.setMessage("Image uploaded successfully");
             commonResponse.setStatusCode(200);
             commonResponse.setData(imageResponse);
             return ResponseEntity.ok(commonResponse);
         } catch (Exception e) {
-            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setStatus(ResponseStatus.ERROR);
             commonResponse.setMessage("Failed to upload image: " + e.getMessage());
             commonResponse.setStatusCode(500);
             commonResponse.setData(null);
@@ -74,7 +73,7 @@ public class ImageController {
         CommonResponse commonResponse = new CommonResponse();
 
         if (name == null || name.trim().isEmpty()) {
-            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setStatus(ResponseStatus.ERROR);
             commonResponse.setMessage("Name must not be empty");
             commonResponse.setStatusCode(400);
             commonResponse.setData(null);
@@ -82,7 +81,7 @@ public class ImageController {
         }
 
         if (imageFiles == null || imageFiles.isEmpty()) {
-            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setStatus(ResponseStatus.ERROR);
             commonResponse.setMessage("At least one image file must be provided");
             commonResponse.setStatusCode(400);
             commonResponse.setData(null);
@@ -106,13 +105,13 @@ public class ImageController {
                     })
                     .toList();
 
-            commonResponse.setSatus(ResponseStatus.SUCCESS);
+            commonResponse.setStatus(ResponseStatus.SUCCESS);
             commonResponse.setMessage("Images uploaded successfully");
             commonResponse.setStatusCode(200);
             commonResponse.setData(responses);
             return ResponseEntity.ok(commonResponse);
         } catch (Exception e) {
-            commonResponse.setSatus(ResponseStatus.ERROR);
+            commonResponse.setStatus(ResponseStatus.ERROR);
             commonResponse.setMessage("Failed to upload images: " + e.getMessage());
             commonResponse.setStatusCode(500);
             commonResponse.setData(null);
@@ -125,13 +124,13 @@ public class ImageController {
         CommonResponse commonResponse = new CommonResponse();
         try {
             byte[] imageBytes = imageService.getImageById(id);
-            commonResponse.setSatus(ResponseStatus.SUCCESS);
+            commonResponse.setStatus(ResponseStatus.SUCCESS);
             commonResponse.setMessage("Image fetched successfully");
             commonResponse.setStatusCode(200);
             commonResponse.setData(imageBytes);
             return ResponseEntity.ok(commonResponse);
         } catch (Exception e) {
-            commonResponse.setSatus(ResponseStatus.NOT_FOUND);
+            commonResponse.setStatus(ResponseStatus.NOT_FOUND);
             commonResponse.setMessage("Image not found with ID: " + e.getMessage());
             commonResponse.setStatusCode(404);
             commonResponse.setData(null);
@@ -144,13 +143,13 @@ public class ImageController {
         CommonResponse commonResponse = new CommonResponse();
         try {
             List<ImageData> images = imageService.getAllImages();
-            commonResponse.setSatus(ResponseStatus.SUCCESS);
+            commonResponse.setStatus(ResponseStatus.SUCCESS);
             commonResponse.setMessage("Fetched all images successfully");
             commonResponse.setStatusCode(200);
             commonResponse.setData(images);
             return ResponseEntity.ok(commonResponse);
         } catch (Exception e) {
-            commonResponse.setSatuts(ResponseStatus.ERROR);
+            commonResponse.setStatus(ResponseStatus.ERROR);
             commonResponse.setMessage("Failed to fetch images: " + e.getMessage());
             commonResponse.setStatusCode(500);
             commonResponse.setData(null);
