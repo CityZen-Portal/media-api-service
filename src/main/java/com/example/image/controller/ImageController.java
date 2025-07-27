@@ -12,7 +12,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-
+@CrossOrigin(
+    origins = {
+        "http://localhost:3000", "http://localhost:3001",
+        "http://localhost:3002", "http://localhost:3003",
+        "https://cityzen-frontend.vercel.app"
+    },
+    allowedHeaders = "*",
+    allowCredentials = "true",
+    methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}
+)
 @RestController
 @RequestMapping("/api/images")
 public class ImageController {
