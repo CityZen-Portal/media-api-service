@@ -9,6 +9,7 @@ import java.util.*;
 public interface ImageService {
     ImageData saveImage(String name, MultipartFile file);
     ImageData getImageById(String id);
+    ImageData getImageByName(String name);
     List<ImageData> getAllImages();
 }
 

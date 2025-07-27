@@ -160,4 +160,27 @@ public class ImageController {
             return ResponseEntity.status(500).body(commonResponse);
         }
     }
+    
+    @GetMapping("/get/{name}")
+    public ResponseEntity<CommonResponse> getImagebyName(@PathVariable String name) {
+        CommonResponse commonResponse = new CommonResponse();
+        try {
+            ImageData _image = imageService.getImageByName(name);
+            ImageResponse imageResponse=new ImageResponse();
+            imageResponse.setId(_image.getId());
+            imageResponse.setName(_image.getName());
+            imageResponse.setPath(_image.getImagePath());
+            commonResponse.setStatus(ResponseStatus.SUCCESS);
+            commonResponse.setMessage("Image fetched successfully");
+            commonResponse.setStatusCode(200);
+            commonResponse.setData(imageResponse);
+            return ResponseEntity.ok(commonResponse);
+        } catch (Exception e) {
+            commonResponse.setStatus(ResponseStatus.NOT_FOUND);
+            commonResponse.setMessage("Image not found with ID: " + e.getMessage());
+            commonResponse.setStatusCode(404);
+            commonResponse.setData(null);
+            return ResponseEntity.status(404).body(commonResponse);
+        }
+    }
 }
