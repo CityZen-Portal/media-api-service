@@ -58,7 +58,17 @@ public class ImageServiceImpl implements ImageService {
             throw new BadRequestException("Image not found");
         }
     }
-
+    @Override
+    public ImageData getImageByName(String name) {
+           Optional<ImageData> image = imageRepository.findImageByName(name);
+        if(image.isEmpty())
+        {
+        	throw new BadRequestException("Image not found");
+        }
+        else{
+        	return image.get();
+        }
+    }
     @Override
     public List<ImageData> getAllImages() {
         return imageRepository.findAll();
