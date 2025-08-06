@@ -11,5 +11,6 @@ public interface ImageService {
     ImageData getImageById(String id);
     ImageData getImageByName(String name);
     List<ImageData> getAllImages();
+    ImageData savePdf(String name, MultipartFile file);
 }
 

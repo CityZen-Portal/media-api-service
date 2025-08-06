@@ -6,11 +6,19 @@ import com.example.image.response.CommonResponse;
 import com.example.image.response.ImageResponse;
 import com.example.image.service.ImageService;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+
+import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 @CrossOrigin(
     origins = {
@@ -192,4 +200,84 @@ public class ImageController {
             return ResponseEntity.status(404).body(commonResponse);
         }
     }
+
+    @PostMapping("/upload/pdf")
+    public ResponseEntity<CommonResponse> uploadPdf(
+            @RequestParam(required = false) String name,
+            @RequestParam("pdfFile") MultipartFile pdfFile) {
+
+        CommonResponse commonResponse = new CommonResponse();
+
+        if (name == null || name.trim().isEmpty()) {
+            commonResponse.setStatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("Name must not be empty");
+            commonResponse.setStatusCode(400);
+            return ResponseEntity.badRequest().body(commonResponse);
+        }
+
+        if (pdfFile == null || pdfFile.isEmpty()) {
+            commonResponse.setStatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("PDF file must not be empty");
+            commonResponse.setStatusCode(400);
+            return ResponseEntity.badRequest().body(commonResponse);
+        }
+
+        try {
+            ImageData pdfData = imageService.savePdf(name, pdfFile);
+            ImageResponse pdfResponse = new ImageResponse(
+                    pdfData.getId(),
+                    pdfData.getName(),
+                    pdfData.getImagePath()
+            );
+
+            commonResponse.setStatus(ResponseStatus.SUCCESS);
+            commonResponse.setMessage("PDF uploaded successfully");
+            commonResponse.setStatusCode(200);
+            commonResponse.setData(pdfResponse);
+            return ResponseEntity.ok(commonResponse);
+
+        } catch (Exception e) {
+            commonResponse.setStatus(ResponseStatus.ERROR);
+            commonResponse.setMessage("Failed to upload PDF: " + e.getMessage());
+            commonResponse.setStatusCode(500);
+            return ResponseEntity.status(500).body(commonResponse);
+        }
+    }
+    private final String SUPABASE_URL = "https://qzrsyvgthrsqmjwfzruv.supabase.co";
+    private final String BUCKET_NAME = "pdf-files";
+    private final String SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6cnN5dmd0aHJzcW1qd2Z6cnV2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQ5OTI4OCwiZXhwIjoyMDcwMDc1Mjg4fQ.zS03T-buc8o3oOgcj50_L3fZnuzCdzzLyulb6eYLaMQ";
+
+
+    @PostMapping("/upload/base")
+    public ResponseEntity<String> uploadPdf(@RequestParam("file") MultipartFile file) {
+        try {
+            String fileName = file.getOriginalFilename();
+            byte[] fileBytes = file.getBytes();
+
+            OkHttpClient client = new OkHttpClient();
+
+            // FIX: Correct RequestBody.create()
+            RequestBody body = RequestBody.create(fileBytes, MediaType.parse("application/pdf"));
+
+            Request request = new Request.Builder()
+                    .url(SUPABASE_URL + "/storage/v1/object/" + BUCKET_NAME + "/" + fileName)
+                    .addHeader("apikey", SUPABASE_API_KEY)
+                    .addHeader("Authorization", "Bearer " + SUPABASE_API_KEY)
+                    .addHeader("Content-Type", "application/pdf")
+                    .put(body)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+
+            if (response.isSuccessful()) {
+                String publicUrl = SUPABASE_URL + "/storage/v1/object/public/" + BUCKET_NAME + "/" + fileName;
+                return ResponseEntity.ok( publicUrl);
+            } else {
+                return ResponseEntity.status(response.code()).body("Upload failed: " + response.message());
+            }
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Exception: " + e.getMessage());
+        }
+    }
+
 }

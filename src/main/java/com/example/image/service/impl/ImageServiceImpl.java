@@ -54,4 +54,36 @@ public class ImageServiceImpl implements ImageService {
     public List<ImageData> getAllImages() {
         return imageRepository.findAll();
     }
+    @Override
+    public ImageData savePdf(String name, MultipartFile file) {
+        try {
+
+            String pdfFileName = "pdf_" + System.currentTimeMillis() + ".pdf";
+
+
+
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                    "resource_type", "raw",
+                    "public_id", "documents/" + pdfFileName,
+
+                    "type", "upload",
+                    "access_mode", "public"
+            ));
+
+
+            String url = uploadResult.get("secure_url").toString();
+
+
+            ImageData pdfData = new ImageData();
+            pdfData.setName(name);
+            pdfData.setImagePath(url);
+
+            return imageRepository.save(pdfData);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Cloudinary PDF upload failed: " + e.getMessage());
+        }
+    }
+
+
 }
